@@ -39,6 +39,7 @@
 \newcommand{\ind}{~\bot~} % independent variables
 \newcommand{\co}[1]{[\text{#1}]} % concentration
 
+\DeclareMathOperator{\st}{such~that}
 \DeclareMathOperator{\rank}{rank}
 \DeclareMathOperator{\pa}{pa} % parent
 \DeclareMathOperator{\de}{de} % descendant
@@ -599,15 +600,17 @@ The resulting expression for the joint probability is then
 
 \subsection{Maximum Likelihood Estimator}
 
-In general, given a random variable $x$ with a probability distribution
-$p(\bar{x} \given \theta)$ that depends on an unknown parameter $\theta$, we
-can estimate the value of $\theta$ from observations of $x$ using the maximum
-likelihood principle. Suppose we have some observations
+In general, given a random variable $x$ with a probability
+distribution\footnote{This abuse of notation of conditioning with respect to a
+non-random variable $\theta$ makes sense if you consider the ML to be a
+special case of MAP.} $p(\bar{x} \given \theta)$ that depends on an unknown
+parameter $\theta$, we can estimate the value of $\theta$ from observations of
+$x$ using the maximum likelihood principle. Suppose we have some observations
 $\{\bar{x}_i\}_{i=1}^N$ of $x$, then we define the likelihood and
 log-likelihood functions to be
 \begin{align*}
-  L(\theta) &= \prod_{i=1}^N p(\bar{x}_i, \theta) \text{ and}\\
-  \ell(\theta) &= \log L(\theta) = \sum_{i=1}^N \log p(\bar{x}_i, \theta)
+  L(\theta) &= \prod_{i=1}^N p(\bar{x}_i \given \theta) \text{ and}\\
+  \ell(\theta) &= \log L(\theta) = \sum_{i=1}^N \log p(\bar{x}_i \given \theta)
 \end{align*}
 respectively. To find an estimate $\hat{\theta}$ of $\theta$ we compute
 \[
@@ -731,7 +734,9 @@ To represent metabolic networks we use the stoichiometric matrix $N \in
 metabolites and in the columns the reactions. An element $n_{ij}$ of $N$ is
 then the stoichiometric coefficient for the metabolite $i$ in reaction $j$. 
 
-\begin{example} Consider the following metabolic network.
+\begin{example} Consider the following metabolic network. Nodes represent
+  metabolites while arrows reactions. Reversible reactions have double headed
+  arrows.
   \begin{center}
     \begin{tikzpicture}
       \matrix (r) [matrix of nodes, column sep = 1cm] {
@@ -770,13 +775,81 @@ which we have set to zero because we are interested in knowing a quasi-steady
 state. Physically this means a constant comsumption / production from the
 network. Because there are more reactions that metabolites, $n \gg q$, there
 is not a unique solution (underdetermined system of equations), but rather an
-infinite number of them in the kernel (null space) of $N$. The kernel
+infinite number of them in the kernel (null space) of $N$. 
+
+\paragraph{Linear Algebra Recap} Recall that the kernel
 \[
   \ker(N) = \{ r \in \mathbb{R}^q : Nr = 0 \}
 \]
-has dimension $q - \rank(N)$.
+has dimension $q - \rank(N)$. Recall that this subspace can be parametrized by
+finding $k := q - \rank(N)$ linearly independent solutions
+$\{\tilde{r}_i\}_{i=1}^k$ to the balancing equation $Nr = 0$. Then any
+solution can be written as a linear combination $r = \sum_i w_i \tilde{r}_i$
+for some coefficients $w_i$. If we use the $\tilde{r}_i$ as columns of a
+matrix, we have the kernel matrix $K$, which by grouping the coefficients into
+$w \in \mathbb{R}^k$ gives that $r = Kw$. Note that the kernel matrix is
+\emph{not} unique.
+
+\subsection{Enzyme Subsets}
+
+The rows of the kernel matrix $K$ correspond to the reactions. If two rows of
+$K$ differ only by a scalar factor, it means that the corresponding reactions
+are coupled, which means that they must always operate together with a fixed
+ratio in their rates. Typically (but not necessarily) this happens in linear
+pathways.
+
+\todo{slides on limitations}
+
+\todo{conservation relations}
 
 \subsection{Flux Balance Analysis}
+
+Real metabolic networks usually have a very large number of reactions, so in
+practice it is impossible to solve for solution of fluxes by hand. To solve
+this we incorporate additional biological knowledge by assuming again
+quasi-steady state and that
+\begin{enumerate}
+  \item there is an \emph{objective} for instance maximize growth / energy
+    (ATP) production / product yield that is calculated with $w\T r = \sum_i
+    w_i r_i$ with some coefficients $\{w_i\}_{i=1}^q$,
+    
+  \item for each reaction $r_i$ we (roughly) know a capacity $\alpha_i \leq
+    r_i \leq \beta_i$ (e.g. for irreversible reactions $\alpha_i > 0$).
+\end{enumerate}
+Then we can formulate a \emph{linear program} to perform a flux balance
+analysis (FBA)
+\begin{align*}
+  \max_{r \in \mathbb{R}^q} ~ w^\T r \quad \st \quad N&r = 0 \\
+       \alpha_i \leq &~r_i \leq \beta_i
+\end{align*}
+which can be solved using the well studied and computationally efficient
+\emph{simplex method}.
+
+\begin{example}
+  \todo{Prediction of Phenotypes}
+\end{example}
+
+\begin{example}
+  \todo{Prediction of Mutant behaviour}
+\end{example}
+
+\begin{example}
+  \todo{evolution of metabolism}
+\end{example}
+
+\subsection{Flux Variability Analysis}
+
+\todo{why we need it}
+
+\begin{alg}[Flux Variability Analysis, FVA]
+  Given the stoichiometric matrix $N$, the reactions $\{R_i\}_i$ and the
+  bounds on the fluxes $\{\alpha_i\}_i, \{\beta_i\}_i$.
+  \begin{algorithmic}
+    \Function{fva}{$N$, $\{\alpha_i\}_i, \{\beta_i\}_i$}
+      % \For{each k}
+    \EndFunction
+  \end{algorithmic}
+\end{alg}
 
 
 \subsection{Caveats / Challenges}
