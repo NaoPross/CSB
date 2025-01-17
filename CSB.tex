@@ -20,6 +20,7 @@
 
 \usepackage{pdflscape}
 
+\usepackage{pgfplots}
 \usepackage{tikz}
 \usetikzlibrary{arrows, matrix, backgrounds, calc, positioning}
 
@@ -902,7 +903,7 @@ The flux cone $P(N)$ can be described in terms of its elementary flux modes
 (EFM, mathematically they are the extreme rays of $P(N)$) $\{e^k\}_k \subset
 \mathbb{R}^q$ which satisfy the following conditions
 \begin{enumerate}
-  \item pseudo steady state (mass conservation ) $Ne^i = 0$,
+  \item pseudo steady state (mass conservation) $Ne^i = 0$,
   \item feasibility of reaction directions $e^i \geq 0 ~ \forall i \in \mathbf{IRR}$,
   \item elementary of reaction participations
     \[
@@ -1000,6 +1001,25 @@ write a model in terms of a set of ``states'' $x \in \mathbb{R}^{n_x}$
 \subsection{Linear Dynamics}
 
 \todo{$\dot{x} = Ax + Bu$}
+
+\subsection{Qualitative Analysis}
+
+For small dimensional systems, especially 2D, we can use some qualitative
+tools to analyze the system.
+
+\begin{defn}[Nullcline]
+  For a system $\frac{dx}{dt} = f(x)$, $x \in \mathbb{R}^{n_x}$, a nullcline
+  is the set where the dynamics are zero in one dimension. Formally
+  \[
+    \left\{ x \in \mathbb{R}^{n_x} :
+        \frac{dx}{dt} = \begin{bmatrix}
+          f_1, \ldots, f_{k-1}, 0, f_{k+1}, \ldots, f_{n_x}
+        \end{bmatrix}
+    \right\}.
+  \]
+\end{defn}
+
+\todo{phase space plots (portraits)}
 
 \begin{table*}
   \caption{
@@ -1345,7 +1365,188 @@ circular patterns of interactions (see Fig. \ref{fig:feedback}).
       k_{M,4} + \co{Y}
     }.
   \end{align*}
+  To find the steady state solutions for this system we can compute the
+  nullclines by setting the derivatives to zero. For convenience we introduce
+  some new scaled variables
+  \begin{align*}
+    y &= \frac{\co{Y}}{\co{Y}^t},
+      & \nu_1 &= k_3 \co{X},
+      & \nu_2 &= k_4 \co{E}, \\
+    J_1 &= \frac{K_{M,3}}{\co{Y}^t},
+      & J_2 &= \frac{K_{M,4}}{\co{Y}^t},
+  \end{align*}
+  so that the scaled nullcline for $\co{Y}$ is
+  \[
+    \nu_1 (1 - y) (J_2 + y) = \nu_2 y (J_1 + 1 - y),
+  \]
+  which can be solved analytically and the solution
+  \begin{align*}
+    y &= \frac{
+      2\nu_1 J_2
+    }{
+      B + \sqrt{B^2 - 4 (\nu_2 - \nu_1) \nu_1 J_2}
+    } =: G(\nu_1, \nu_2, J_1, J_2) \\
+    &\text{where } B = \nu_2 - \nu_1 + \nu_2 J_1 + \nu_1 J_2
+  \end{align*}
+  is known as the Goldbeter-Koshland function. This solution is sigmoidal-like
+  in the input $\co{X}$ (switch-like).
 \end{example}
+
+
+\begin{example}
+  We now consider the following reaction scheme which is a system with a
+  positive feedback.
+  \begin{center}
+    \begin{tikzpicture}
+      \node (X) {X};
+      \node[yshift = -10mm, xshift = -10mm] (Y) {Y};
+      \node[yshift = -10mm, xshift =  10mm] (Yp) {Y\textsubscript{p}};
+      
+      \draw[semithick, -latex] (X) ++ (-15mm,0) -- ++(5mm,0)
+        node (Fu) {} -- node[midway, above] {$R_1$} (X);
+
+      \draw[semithick, -latex] (X) -- node[midway, above] {$R_3$} ++(2,0);
+
+      \draw[semithick, -left to] ($(Y.east)+(0,.05)$) -- 
+        ($(Y.east)!0.5!(Yp.west) + (0,.05)$) node (FX) {} -- 
+        node[pos=.6, above] {$R_5$} ($(Yp.west)+(0,.05)$);
+
+      \draw[semithick, left to-] ($(Y.east)-(0,.05)$) -- 
+        node[pos = .6, below] {E}
+        node[pos = .2, below] {$R_4$} ($(Yp.west)-(0,.05)$);
+
+      \draw[semithick, densely dashed, -latex] (X) -- (FX);
+      \draw[semithick, densely dashed, -latex] (Y) -- node[midway, left] {$R_2$} (Fu -| Y);
+      \draw[semithick, densely dashed, -latex] (Fu) ++(-1, 5mm)
+        node[left] {$u$} -| (Fu);
+    \end{tikzpicture}
+  \end{center}
+  Using Michealis-Menten kinetics the dynamics are
+  \begin{align*}
+    \frac{d\co{X}}{dt} &= k_1 u + k_2 \co{Y} - k_3 \co{X}, \\
+    \frac{d\co{Y}}{dt} &= \frac{
+      k_4 \co{X} (\co{Y}^t - \co{Y})
+    }{
+      K_{M,4} + \co{Y}^t - \co{Y}
+    }
+    - \frac{
+      k_5 \co{E} \co{Y}
+    }{
+      K_{M,5} \co{Y}
+    }.
+  \end{align*}
+  Intersecting the nullclines we get the steady state concentrations
+  \begin{align*}
+    \co{Y} &= \frac{k_3 \co{X} - k_1 u}{k_2}, \\
+    \co{Y} &= \co{Y}^t G\left(
+      k_4 \co{X}, k_5 \co{E}, \frac{K_{M,4}}{\co{Y}^t}, \frac{K_{M,5}}{\co{Y}^t}
+    \right).
+  \end{align*}
+  This system can have up to two stable steady states and an unstable steady
+  state.
+\end{example}
+
+% Add phase portraits
+% \begin{figure}
+%   \begin{tikzpicture}
+%     \begin{axis}
+%     \end{axis}
+%   \end{tikzpicture}
+% \end{figure}
+
+\todo{Mutual antagonism example}
+
+\subsection{Bifurcations}
+
+In both the negative and positive feedback examples we had the freedom to
+choose $u$. By varying $u$ the number of steady states changes, and so the
+system can have qualitatively different behaviours. When by changing $u$ the
+number of steady states (aka attractors) changes, we say that the value of $u$
+at that point is \emph{critical}, and there is a \emph{bifurcation}. If we
+plot the steady states as a function of $u$ we call it a \emph{bifurcation
+diagram}.
+
+\todo{Add a bifurcation diagram}
+
+\subsection{Oscillators}
+
+\begin{example}
+  Consider the following reaction scheme, where again protein X is a
+  phosphatase that dephosphorylates Y\textsubscript{p}, protein Y actvates a
+  production of X (positive feedback on X) and now additionally a protein Z
+  whose production is mediated by Y activates a degradation of X (negative
+  feedback on X).
+  \begin{center}
+    \begin{tikzpicture}
+      \matrix (m) [
+        row sep = 4mm, column sep = 5mm,
+      ] {
+                       & \node (X) {X}; \\
+        \node (Y) {Y}; &                 & \node (Yp) {Y\textsubscript{p}}; \\
+                       & \node (Z) {Z}; \\
+      };
+
+      % production of X
+      \draw[semithick, -latex] (X) ++(-15mm,0) --
+        node[midway] (FX) {}
+        node[near end, above] {$R_1$} (X);
+
+      % degradation of X
+      \draw[semithick, -latex] (X) --
+        node[midway] (FXd) {}
+        node[near end, above] {$R_3$} ++(15mm,0);
+
+      \draw[semithick, -left to] ($(Y.east)+(0,.05)$) --
+        node[midway] (FY) {}
+        node[pos=.8, above] {$R_5$}
+        ($(Yp.west)+(0,.05)$);
+
+      \draw[semithick, left to-] ($(Y.east)-(0,.05)$) --
+        node[midway, below] {E} 
+        node[pos=.2, below] {$R_4$}
+        ($(Yp.west)-(0,.05)$);
+
+      \draw[semithick, -latex] (Z) ++(-15mm,0) -- node[midway] (FZ) {} (Z);
+      \draw[semithick, -latex] (Z) -- node[near end, below] {$R_7$} ++(15mm,0);
+
+      \node (FXp) at (FX -| Y) {};
+      \node (FYpp) at (FY -| X) {};
+      \node (FZp) at (FZ -| Y) {};
+
+      \draw[semithick, densely dashed, -latex] (Y) -- node[midway, left] {$R_2$} (FXp);
+      \draw[semithick, densely dashed, -latex] (Y) -- node[midway, left] {$R_6$} (FZp);
+      \draw[semithick, densely dashed, -latex] (X) -- (FYpp);
+
+      \draw[semithick, densely dashed, -latex] (FX) ++(-10mm, 5mm) node[left] {$u$} -| (FXp);
+      \draw[semithick, densely dashed, -latex] (Z) to[out=30, in=-60, looseness=2] (FXd);
+
+    \end{tikzpicture}
+  \end{center}
+  To analyze the dynamics we assume steady-state for the interconversion
+  between Y and Y\textsubscript{p}. So
+  \[
+    \co{Y} = \co{Y}^t G\left(
+      k_4 \co{X}, k_5 \co{E}, \frac{K_{M,4}}{\co{Y}^t}, \frac{K_{M,5}}{\co{Y}^t}
+    \right).
+  \]
+  The other two concentrations have the model
+  \begin{align*}
+    \frac{d\co{X}}{dt} &= k_1 u + k_2 \co{Y} - k_3 \co{Z} \co{X}, \\
+    \frac{d\co{Z}}{dt} &= k_6 \co{Y} - k_7 \co{Z},
+  \end{align*}
+  and their respective nullclines are given by
+  \begin{align*}
+    \co{Z} &= \frac{k_1 u + k_2 \co{Y}}{k_2 \co{X}}, &
+    \co{Z} &= \frac{k_6}{k_7} \co{Y}.
+  \end{align*}
+
+  The bifurcation diagram for this system in the steady state concentration of
+  X has two critical values $u_{c,1}$ and $u_{c,2}$. The dynamics of $\co{X}$
+  are stable for $u < u_{c,1}$ and $u_{c,2} < u$, while unstable for $u \in
+  (u_{c,1}, u_{c,2})$. In the unstable region is a \emph{limit cycle}, and the
+  concentration of X oscillates.
+\end{example}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
