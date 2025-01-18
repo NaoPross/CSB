@@ -41,6 +41,7 @@
 \newcommand{\co}[1]{[\text{#1}]} % concentration
 
 \DeclareMathOperator{\st}{such~that}
+\DeclareMathOperator{\tr}{tr}
 \DeclareMathOperator{\rank}{rank}
 \DeclareMathOperator{\pa}{pa} % parent
 \DeclareMathOperator{\de}{de} % descendant
@@ -1256,30 +1257,30 @@ circular patterns of interactions (see Fig. \ref{fig:feedback}).
 
 \begin{figure}
   \centering
-  \begin{tikzpicture}
+  \begin{tikzpicture}[semithick, densely dashed]
     \begin{scope}
       \node (X) {X};
-      \node[right = 1cm of X] (Y) {Y};
-      \draw[semithick, -latex] (X) to[out=90, in=90, thick]
+      \node[right = 8mm of X] (Y) {Y};
+      \draw[-latex] (X) to[out=90, in=90, thick]
         node[midway, above] {+} (Y);
-      \draw[semithick, Bracket-] (X) to[out=-90, in=-90, thick] 
+      \draw[Bracket-] (X) to[out=-90, in=-90, thick] 
         node[midway, below] {--} (Y);
       \coordinate (A) at ($(X)!0.5!(Y) + (0,15mm)$);
     \end{scope}
 
     \begin{scope}[xshift=3cm]
       \node (X) {X};
-      \node[right = 1cm of X] (Y) {Y};
+      \node[right = 8mm of X] (Y) {Y};
       \draw[semithick, -latex] (X) to[out=90, in=90, thick] 
         node[midway, above] {+} (Y);
       \draw[semithick, latex-] (X) to[out=-90, in=-90, thick]
-        node[midway, below] {--} (Y);
+        node[midway, below] {+} (Y);
       \coordinate (B) at ($(X)!0.5!(Y) + (0,15mm)$);
     \end{scope}
 
     \begin{scope}[xshift=6cm]
       \node (X) {X};
-      \node[right = 1cm of X] (Y) {Y};
+      \node[right = 8mm of X] (Y) {Y};
       \draw[semithick, -Bracket] (X) to[out=90, in=90, thick]
         node[midway, above] {--} (Y);
       \draw[semithick, Bracket-] (X) to[out=-90, in=-90, thick]
@@ -1563,12 +1564,12 @@ diagram}.
 
       \draw[semithick, right to-] ($(Y.east)+(0,.05)$) --
         node[midway] (FY) {}
-        node[pos=.2, above] {$R_5$}
+        node[pos=.2, above] {$R_4$}
         ($(Yp.west)+(0,.05)$);
 
       \draw[semithick, -right to] ($(Y.east)-(0,.05)$) --
         node[midway, below] {E} 
-        node[pos=.8, below] {$R_4$}
+        node[pos=.8, below] {$R_5$}
         ($(Yp.west)-(0,.05)$);
 
       \begin{scope}[semithick]
@@ -1591,12 +1592,12 @@ diagram}.
     \end{tikzpicture}
   \end{center}
   To analyze the dynamics we assume steady-state for the interconversion
-  between Y and Y\textsubscript{p}. So
-  \[
+  between Y and Y\textsubscript{p}. So we have
+  \begin{equation} \label{eqn:osc-y-yp-ss}
     \co{Y} = \co{Y}^t G\left(
       k_4 \co{X}, k_5 \co{E}, \frac{K_{M,4}}{\co{Y}^t}, \frac{K_{M,5}}{\co{Y}^t}
     \right).
-  \]
+  \end{equation}
   The other two concentrations have the model
   \begin{align*}
     \frac{d\co{X}}{dt} &= k_1 u + k_2 \co{Y} - k_3 \co{Z} \co{X}, \\
@@ -1654,10 +1655,109 @@ signaling and predator-prey interactions (in ecosystems).
           \begin{scope}[densely dashed]
             \draw[-latex] (Y) -- (FZp);
             \draw[-latex] (Z) -- (FYpp);
+            \draw[-latex] (FXp) ++(-10mm, 5mm) node[left] {$u$} -| (FXp);
           \end{scope}
       \end{scope}
     \end{tikzpicture}
   \end{center}
+  Again we assume a steady state for the reactions between Y and
+  Y\textsubscript{p}, and thus we have again equation \eqref{eqn:osc-y-yp-ss},
+  but with Z instead of X
+  \[
+    \co{Y} = \co{Y}^t G\left(
+      k_4 \co{Z}, k_5 \co{E},
+      \frac{k_{M,4}}{\co{Y}^t},
+      \frac{k_{M,5}}{\co{Y}^t}
+    \right).
+  \]
+  The other equations are
+  \begin{align*}
+    \frac{d\co{X}}{dt} &= k_1 u - (k_2' + k_2 \co{Y}) \co{X}, \\
+    \frac{d\co{Z}}{dt} &= (k_2' + k_2 \co{Y}) \co{X} - k_3 \co{Z},
+  \end{align*}
+  and the nullclines
+  \begin{align*}
+    \co{X} &= \frac{k_1 u}{k_2' + k_2 \co{Y}}, &
+    \co{X} &= \frac{k_3 \co{Z}}{k_2' + k_2 \co{Y}}.
+  \end{align*}
+  Similarly to the activator-inhibitor dynamics these dynamics also present an
+  oscillating limit cycle for certain values of $u$.
+\end{example}
+
+\subsection{Linearization for Stability Analysis}
+
+\todo{Linearization}
+
+\begin{example}[Simplified Substrate Depletion]
+  We consider again the substrate depletion system but assuming a low
+  concentration of Z we approximate the Goldbeter-Koshland
+  function with a parabola for the steady state of Y
+  \[
+    G(\nu_1)
+    \approx 
+    \frac{\partial^2 G}{\partial \nu_1^2}(\bar{\nu}_1) \nu_1^2 
+      + \frac{\partial G}{\partial \nu_1}(\bar{\nu}_1) \nu_1,
+  \]
+  with the following reaction scheme.
+  \begin{center}
+    \begin{tikzpicture}
+      \node (X) {X};
+      \node[right = 15mm of X] (Z) {Z};
+
+      \begin{scope}[semithick]
+        \draw[-latex] (X) ++ (-15mm, 0) -- 
+          node[midway, below] {$R_1$}
+          node[midway] (FXp) {} (X);
+        \draw[-latex] (X) --
+          node[midway, below] {$R_2$}
+          node[midway] (FZp) {} (Z);
+        \draw[-latex] (Z) -- node[midway, below] {$R_3$} ++(15mm, 0);
+        \begin{scope}[densely dashed]
+          \draw[-latex] (FXp) ++ (-10mm, 5mm) node[left] {$u$} -| (FXp);
+          \draw[-latex] (Z) |- ++(0, 5mm) -| (FZp);
+        \end{scope}
+      \end{scope}
+    \end{tikzpicture}
+  \end{center}
+  For the sake of exposure we choose the unit kinetic rates (except $k_1 :=
+  k$) and $\bar{\nu}_1$ such that the dynamics simplify down to
+  \[
+    \frac{dx}{dt} = 
+    \frac{d}{dt} \begin{bmatrix} \co{X} \\ \co{Z} \end{bmatrix}
+    = \begin{bmatrix}
+      u - (k + \co{Z}^2) \co{X} \\
+      (k + \co{Z}^2) \co{X} - \co{Z}
+    \end{bmatrix}
+    = f(x, u).
+  \]
+  Then to analyze its stability, we look at the state transition matrix of the
+  dynamics linearized at the steady state
+  \begin{align*}
+    \frac{\partial f}{\partial x} \bigg|_{x_{ss}}
+    = \begin{bmatrix}
+      - (k + u^2) & \dfrac{-2u}{k + u^2} \\
+      k + u^2 & \dfrac{u^2 - k}{k + u^2}
+    \end{bmatrix} =: J_{ss},
+  \end{align*}
+  where
+  \[
+    f(x_{ss}, u) = 0 
+    \quad \Rightarrow \quad 
+    x_{ss} = \begin{bmatrix}
+      \dfrac{u}{k + u^2} &
+      u
+    \end{bmatrix}^\T,
+  \]
+  which has eigenvalues
+  \begin{align*}
+    \lambda &= \frac{1}{2} \left(
+      \tr (J_{ss}) + \sqrt{
+        \tr (J_{ss})^2 - 4 \det (J_{ss})
+      }
+    \right).
+  \end{align*}
+
+  \todo{2D bifurcation diagram}
 \end{example}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
