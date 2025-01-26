@@ -22,7 +22,7 @@
 
 \usepackage{pgfplots}
 \usepackage{tikz}
-\usetikzlibrary{arrows, matrix, backgrounds, calc, positioning}
+\usetikzlibrary{arrows, matrix, backgrounds, calc, positioning, shapes}
 
 % Match the IDSC vibe with the sans-serif font
 \usepackage[T1]{fontenc}
@@ -957,6 +957,8 @@ The methods discussed so far do not consider interactions between species
 (were only for single cells). The OptCom algorithm is a formulation of a
 two-level optimization problem where individuals (cells) maximize biomass, 
 
+\todo{OptComm}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Dynamic Systems Fundamentals}
@@ -1719,8 +1721,8 @@ signaling and predator-prey interactions (in ecosystems).
       \end{scope}
     \end{tikzpicture}
   \end{center}
-  For the sake of exposure we choose the unit kinetic rates (except $k_1 :=
-  k$) and $\bar{\nu}_1$ such that the dynamics simplify down to
+  For the sake of exposure we choose unitary kinetic rates (except $k_1 := k$)
+  and $\bar{\nu}_1$ such that the dynamics simplify down to
   \[
     \frac{dx}{dt} = 
     \frac{d}{dt} \begin{bmatrix} \co{X} \\ \co{Z} \end{bmatrix}
@@ -1733,11 +1735,12 @@ signaling and predator-prey interactions (in ecosystems).
   Then to analyze its stability, we look at the state transition matrix of the
   dynamics linearized at the steady state
   \begin{align*}
+    J_{ss} :=
     \frac{\partial f}{\partial x} \bigg|_{x_{ss}}
     = \begin{bmatrix}
       - (k + u^2) & \dfrac{-2u}{k + u^2} \\
       k + u^2 & \dfrac{u^2 - k}{k + u^2}
-    \end{bmatrix} =: J_{ss},
+    \end{bmatrix},
   \end{align*}
   where
   \[
@@ -1750,11 +1753,11 @@ signaling and predator-prey interactions (in ecosystems).
   \]
   which has eigenvalues
   \begin{align*}
-    \lambda &= \frac{1}{2} \left(
+    \lambda &= \frac{1}{2} \left[
       \tr (J_{ss}) + \sqrt{
         \tr (J_{ss})^2 - 4 \det (J_{ss})
       }
-    \right).
+    \right].
   \end{align*}
 
   \todo{2D bifurcation diagram}
@@ -1795,8 +1798,15 @@ functional that is to be minimized
 with a (positive semidefinite) weighting matrix $Q$. For instance if $Q = I$
 all errors are weighted equally. In reality since our measurements have a
 certain uncertainty (stemming from the tools we are using) it is more common
-to set $Q$ to be the inverse of the covariance matrix of the measurements $Q =
-\Sigma_\epsilon^{-1}$.
+to set $Q$ to be the inverse of the covariance matrix of the measurement noise
+$Q = \Sigma_\epsilon^{-1}$.
+
+An alternative identification error functional $\phi$ could be constructed
+from potential energy surfaces (variation of the potential energy, enthalpy,
+as a function of the conformation), since thermodynamically the most frequent
+configurations lie at the global free energy minimum. In this case however
+there are usually multiple minima and it is not easy to find the global
+minimum.
 
 \subsection{Sensitivity}
 
@@ -1911,21 +1921,110 @@ sensitivity).
 \subsection{Evolutionary Methods}
 
 
-\subsection{Goodness-of-fit}
+\subsection{Goodness-of-fit and Identifiability}
 
 After finding an estimate of $p^\star$ by minimizing $\phi(p)$ we need to
 confirms the statistical validity of the result. Because we assume that the
 error is zero-mean Gaussian if $Q = \Sigma_\epsilon^{-1}$ then $\phi(p)$ is
 $\chi^2$-distributed and we therefore use a $\chi^2$-test. The degrees of
 freedom of $\chi^2_k$ is $k = N - n_p$. By choosing an $\alpha$-value
-(confidence interval) we can define a threshold $\Delta_\alpha$ from a
+(confidence interval) we can define a threshold $\Delta_\alpha =
+\int_{-\infty}^\alpha p_\phi(\varphi) \, d\varphi$ from a
 cumulative $\chi_k^2$ distribution and conclude our estimate $p$ is
-statistically significant if it lies in the set
+statistically significant if it lies in the confidence interval
 \[
-  \{ p \in \mathbb{R}^{n_p} : \phi(p) - \phi(p^\star) \leq \Delta_\alpha \}
+  \mathcal{C} =
+  \{ p \in \mathbb{R}^{n_p} : \phi(p) - \phi(p^\star) \leq \Delta_\alpha \}.
 \]
+Note however that there are limitations, for instance
+\begin{enumerate}
+  \item in case of insufficient mapping from internal model states to
+    observables (e.g. with linear dependencies of parameters) there can be a
+    non-unique minima (or even unbounded $\mathcal{C}$);
+  \item sometimes functional dependencies between parameters lead to a flat
+    objective function in certain dimensions ($\mathcal{C}$ has a ``valley'').
+\end{enumerate}
 
 \subsection{Optimal Experiment Design}
+
+To mitigate the limitations above, one must carefully choose the experimental
+settings and input $u$ to maximize the extraction of informations. In a
+general setting this means solving an optimization problem
+\begin{align*}
+  \max_u ~ & \phi(F(p^\star, u(t))) \\
+  \st ~ & \frac{dx}{dt} = f(x(t), u(t), p) \\
+        & u \in \mathcal{U}, t \in \mathcal{T},
+\end{align*}
+where $\phi$ is a cost functional of $F$, the Fisher information matrix, which
+itself depends on the choice of inputs $u(t)$ (as they affect the sensitivity
+matrix $S(t)$ on which $F$ depends). Here, $\mathcal{U}$ and $\mathcal{T}$
+are algebraic constraints that reflect some limitations in the experiment (for
+instance finite duration: $\mathcal{T} = \{t : \underline{t} \leq t \leq
+\overline{t}\}$). Examples of $\phi$ could be:
+\begin{description}
+  \item[D-Optimality] Maximize information, which corresponds to $\phi(F)
+    \propto \det(F)$.
+
+  \item[A-Optimality] Minimize uncertainty, so
+      $\phi(F) \propto \tr(F^{-1}) \leq \sum_j \sigma^2_{p_j}$.
+
+  \item[E-Optimality] Minimize the maximal uncertainty, which is
+    \[
+      \phi(F) \propto \min \{\lambda : \lambda \text{ eigenvalue of } F\}.
+    \]
+\end{description}
+Additionally, to make the problem solvable the input $u$ can be written as a
+low-order approximation (parametrization) of the true input. The decision
+variables would then become switching points, durations, \ldots. However, even
+with all of these efforts the optimization problem usually remains non-linear
+and computationally expensive.
+
+\todo{Caveats}
+
+\subsection{Bayesian Parameter Estimation}
+
+So far we have assumed that we know the true structure of the model ($f(x, u,
+p)$ is correct), but this is generally not the case. If we treat the
+parameters $p$ as random variables we can use Bayesian methods to find the
+optimal parameters $p^\star$. To avoid confusion with the probability density
+function we will use $\theta$ instead of $p$ in the model
+\[
+  \frac{dx}{dt} = f(x(t), u(t), \theta),
+\]
+and assume a prior distribution $\theta \in \mathcal{Q}^\theta$. Then by
+Bayes' theorem
+\begin{align*}
+  p_{x(t_i) \given \theta} (\bar{x}_i \given \bar{\theta})
+  &= \frac{
+      p_{\theta | x(t_i)} (\bar{x} \given \bar{\theta}) 
+      p_\theta(\bar{\theta})
+    }{
+      p_{x(t_i)} (\bar{x}_i)
+   } \\
+  &= \frac{
+      p_{\theta | x(t_i)} (\bar{x} \given \bar{\theta}) 
+      p_\theta(\bar{\theta})
+    }{
+      \int_{\mathcal{Q}^\theta} p_{x(t_i) \given {\theta}} 
+      (\bar{x}_i \given \vartheta) \, d\vartheta
+    }.
+\end{align*}
+Now, in this case since $\theta$ has an arbitrary distribution and $x(t_i)$
+depends on previous values of $x(t < t_i)$ it can become difficult to compute
+the denominator. Even if $\theta$ is a discrete random variable computing the
+there is a combinatorial explosion which makes the problem impractical for
+large systems (many states). Even if we assume Gaussian noise the posterior
+(denominator) remains difficult.
+
+To work around this problem we use \emph{Monte Carlo} methods to approximate
+the distributions (instead of computing them).
+
+\todo{MCMC}
+
+\subsubsection{Metropolis-Hastings}
+
+\todo{Metropolis-Hastings algorithm}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2022,37 +2121,200 @@ the adjacent regions $R_j$.
 
 When there are a very low number of molecules (copy numbers), then we cannot
 use \emph{ensemble} models from the previous sections (ODE models). This is
-because
-\begin{itemize}
-  \item Relative fluctuations depend on molecule numbers. For $n$ molecules
-    the fluctuation is $\Delta n \approx 1 / \sqrt{n}$ (from thermodynamics)
-    so $\Delta n / n \approx 1 / \sqrt{n^3}$.
-  \item \ldots
-\end{itemize}
+because of relative fluctuations depend on molecule numbers. For $n$ molecules
+the fluctuation is $\Delta n \approx 1 / \sqrt{n}$ (from thermodynamics) so
+$\Delta n / n \approx 1 / \sqrt{n^3}$, so for small $n$ the fluctuations
+become proportionally larger and inaccurate or misleading.
 
-\todo{separation between intrinsic and extrinsic noise}
+\todo{separation intrinsic vs extrinsic }
 
 \begin{description}
   \item[Extrinsic noise] Variability of (assumed) parameters.
   \item[Intrinsic noise] Effect of small molecule numbers.
 \end{description}
 
-We assume again spatial homogeneity (``well-stirred'') and for the derivation
-that the reaction volume $\Omega$ is constant.
+\subsection{Chemical Master Equation}
 
-Consider a set of $N$ distinct chemical species $\{S_1, S_2, \ldots, S_N\}$,
-and each species has a number of molecules $n_i$ for $S_i$. Then the state of
-the system can be represented by a vector $n(t) \in \mathbb{R}^N$. The
+We assume again spatial homogeneity (``well-stirred'') and additionally that
+the reaction volume $\Omega$ is constant, and that the system is at a thermal
+(but not necessarily chemical) equilibrium).
+
+We will consider a set of $N$ distinct chemical species $\{S_1, S_2, \ldots,
+S_N\}$, and each species $S_i$ has a number of molecules $n_i$. Then the state
+of the system can be represented by a vector $n(t) \in \mathbb{R}^N$. The
 molecules react with each other via $M$ possible reaction channels $\{R_1,
-\ldots, R_M\}$. We will assume that reactions happen instantaneously (are
+\ldots, R_M\}$. We assume that all $R_j$ are either mono or bimolecular
+reactions. We further will assume that reactions happen instantaneously (are
 ``fired'' when a reaction channel is activated).
 
-For each reaction $R_j$ we define a state-change vector $v_j$ such that $n +
-v_j$ corresponds to the state after the reaction $R_j$ has been fired. Then to
+For each reaction $R_j$ we define a state-change vector $\nu_j$ such that $n +
+\nu_j$ corresponds to the state after the reaction $R_j$ has been fired. Then to
 define ``when'' reactions occur, we define (again for each reaction $R_j$) the
 propensity function $a_j(n)$ so that $a_j(n) dt$ describes the average
 probability that in the system in state $n(t)$ one reaction of type $R_j$
-occurs in the time interval $[t, t + dt]$.
+occurs in the time interval $[t, t + dt)$. The propensity function is not the
+same as the (deterministic and macroscopic) reaction constants, though they
+are related, for instance
+\begin{itemize}
+  \item For an unimolecular reactions $R_j$ with reactant $S_i$: $a_j(n) = c_j
+    n_i$ where $c_j = k_j$ the kinetic constant;
+  \item For a bimolecular reaction $R_j$ with reactants $S_i$ and $S_k$:
+    $a_j(n) = c_j n_i n_k$ where $c_j$ also depends on the volume $\Omega$;
+  \item In homodimerization (bimolecular reaction with same species $S_i$):
+    $a_j(n) = \frac{1}{2} c_j n_i (n_i-1)$ where again $c_j$ depends on $k_j$
+    and the volume $\Omega$.
+\end{itemize}
+
+Given the above we denote the probability that in the reaction volume at
+time $t$ the system will be in state $n$, given the initial conditions $(n_0,
+t_0)$ with $P(n, t \given n_0, t_0)$. Then to derive the dynamics, the
+probability that the system will be in state $n$ at time $t + dt$ is
+\begin{align*}
+  P(n, t+dt &\given n_0, t_0) =
+    P(n, t \given n_0 t_0) \Biggl(
+      1 - \sum_{j=1}^M a_j(n) dt
+    \Biggr) \\
+    &+ \sum_{j=1}^M P(n - \nu_j, t \given n_0, t_0) a_j (n - \nu_j) dt.
+\end{align*}
+The first term is the probability that the system is already in state $n$ at
+time $t$ and no reaction fires in the interval, while the second describes the
+probability of being one reaction away from state $n$ at time $t$ and that a
+matching reaction fires in the interval. Dividing by $dt$ and letting $dt \to
+0$ we get the \emph{chemical master equation} (CME)
+\begin{align*}
+  \frac{\partial P (n, t \given n_0, t_0)}{\partial t}
+  = \sum_{j=1}^M a_j(n - \nu_j) &P(n - \nu_j, t \given n_0, t_0) \\
+    &- a_j(n) P(n, t \given n_0, t_0).
+\end{align*}
+The CME is a system of coupled ODEs and the size of the system is on the order
+of the possible constellation of molecule numbers that can exist in the system
+(e.g. $10^{10}$ for 10 species with 10 molecules), therefore it is not
+analytically solvable but not for the simplest cases and intractable for
+system of realistic (interesting) size.
+
+\begin{example}[Production Degradation]
+  We solve the CME for steady state for the simple production-degradation
+  system with the following reaction scheme.
+  \begin{center}
+    \begin{tikzpicture}
+      \node (X) {X};
+      \begin{scope}[semithick]
+        \draw[-latex] (X) ++ (-15mm,0) -- node[midway, above] {$\alpha$} (X);
+        \draw[-latex] (X) -- node[midway, above] {$\mu$} ++(15mm,0);
+      \end{scope}
+    \end{tikzpicture}
+  \end{center}
+  In this case the state space is $\mathbb{Z}_{\geq 0}$, and we can draw the
+  state transitions of the dynamics with the chain below.
+  \begin{center}
+    \begin{tikzpicture}
+      \matrix (m) [matrix of nodes, column sep = 5mm,
+        nodes = {
+          draw, semithick, ellipse, minimum width = 4mm, minimum height = 4mm,
+          font=\footnotesize,
+        }
+      ] {
+        0 & |[draw=none]| $\cdots$ & $x-1$ & $x$ & $x+1$ & |[draw=none]| $\cdots$ \\
+      };
+
+      \begin{scope}[semithick, -latex, font=\footnotesize]
+        \draw (m-1-1) to[bend left] node[midway, above] {$\alpha$} (m-1-2);
+        \draw (m-1-2) to[bend left] node[midway, above] {$\alpha$} (m-1-3);
+        \draw (m-1-3) to[bend left] node[midway, above] {$\alpha$} (m-1-4);
+        \draw (m-1-4) to[bend left] node[midway, above] {$\alpha$} (m-1-5);
+        \draw (m-1-5) to[bend left] node[midway, above] {$\alpha$} (m-1-6);
+
+        \draw (m-1-6) to[bend left] node[midway, below] {$\mu (x+2)$} (m-1-5);
+        \draw (m-1-5) to[bend left] node[midway, below] {$\mu (x+1)$} (m-1-4);
+        \draw (m-1-4) to[bend left] node[midway, below] {$\mu x$} (m-1-3);
+        \draw (m-1-3) to[bend left] node[midway, below] {$\mu (x-1)$} (m-1-2);
+        \draw (m-1-2) to[bend left] node[midway, below] {$\mu$} (m-1-1);
+      \end{scope}
+    \end{tikzpicture}
+  \end{center}
+  Here simplifying the notation the CME reads
+  \[
+    \frac{\partial P}{\partial t}
+    = \alpha P(x-1, t)  + \mu (x+1) P(x+1, t) - (\alpha + \mu x) P(x, t)
+  \]
+  and since we are looking for the steady state distribution $P(x)$, setting
+  the above equal to zero we get the recurrence relation
+  \[
+    \alpha P(x-1) + \mu (x+1)  P(x+1) = (\alpha + \mu x) P(x)
+  \]
+  which we can solve inductively starting at $x = 0$:
+  \begin{description}
+    \item[$x=0:$] $\mu P(1) = \alpha P(0)$
+    \item[$x=1:$] \begin{align*}
+        \alpha P(0) + 2\mu P(2) &= (\alpha + \mu) P(1) \\
+          &= \alpha P(1) + \alpha P(0) \\
+        \Rightarrow \quad 2\mu P(2) = \alpha P(1)
+    \end{align*}
+    \item[$x=2:$] \begin{align*}
+        \alpha P(1) + 3\mu P(3) &= (\alpha + 2\mu) P(2) \\
+          &= \alpha P(2) + \alpha P(1) \\
+        \Rightarrow \quad 3\mu P(3) = \alpha P(2)
+    \end{align*}
+  \end{description}
+  the pattern continues with
+  \begin{gather*}
+    x\mu P(x) = \alpha P(x-1) \\
+    \Rightarrow \quad
+    P(x) = \frac{\alpha}{\mu x} P(x-1) = 
+    \left( \frac{\alpha}{\mu} \right)^x \frac{1}{x!} P(0),
+  \end{gather*}
+  and then because $P(x)$ is a probability distribution it must be that
+  \[
+    \sum_{x \in \mathbb{Z}_{\geq 0}} P(x) 
+      = \sum_{x = 0}^\infty \left( \frac{\alpha}{\mu} \right)^x \frac{1}{x!}
+      P(0) = 1
+  \]
+  and we can solve for $P(0)$ and find $P(0) = e^{-\alpha / \mu}$. If we take
+  the expectation of the state in steady state we recover the deterministic
+  result
+  \begin{align*}
+    \E{x} &= \sum_{x \in \mathbb{Z}_{\geq 0}} x P(x)
+      = \sum_{x = 0}^\infty x \left(
+        \frac{\alpha}{\mu}
+      \right)^x \frac{1}{x!} P(0) \\
+    &= \frac{\alpha}{\mu} \sum_{x = 0}^\infty x \left(
+        \frac{\alpha}{\mu}
+      \right)^{x-1} \frac{P(0)}{(x-1)!} 
+    = \frac{\alpha}{\mu} e^{\alpha/\mu} P(0) = \frac{\alpha}{\mu}.
+  \end{align*}
+\end{example}
+
+As done in the example with the CME it is theoretically possible to compute
+the distribution of moments for the states, for instance the average molecule
+numbers have dynamics
+\[
+  \frac{d}{dt} \langle n_i(t) \rangle = \sum_{j=1}^M \nu_{ij} \langle
+  a_j(n(t)) \rangle.
+\]
+If all propensity functions $a_j$ are linear in the state variable $n$ (this
+happens when there are only unimolecular reactions) the expectation commutes
+and we have that $\langle a_j(n(t)) \rangle = a_j (\langle n(t) \rangle )$.
+In the presence of bimolecular (or more complex) reactions there is no
+analytical solution.
+
+\subsection{Stochastic Simulation}
+
+Since analytically solving the CME is practically impossible the idea of a
+stochastic simulation is to determine a set of representative trajectories
+instead of solving for the probability density. We will discuss Gillespie's
+algorithm.
+
+The starting point is a state $n$ at time $t$. To simulate the system to the
+next step we define $\tau$ as the time at which the next time occurs, and $j$
+the index of that reaction. We write
+\[
+  P(\tau, j \given n, t) d\tau
+\]
+to denote the joint PDF in $\tau$ (continuous) and $j$ (discrete) that the
+next reaction will occur in the time interval $[t + \tau, t + \tau + d\tau)$,
+and that it will be a reaction of type $R_j$.
+
+\todo{Gillespie}
 
 \end{document}
 % vim:ts=2 sw=2 et tw=78 spell spelllang=en:
