@@ -445,13 +445,14 @@ length $\ell(u,v)$ between two nodes $u,v$ can be found using algorithms such
 as breath first search or Dijkstra's algorithm.
 
 \paragraph{Clustering} The clustering coefficient $C(u)$ for a node $u \in V$
-is the ratio between the number $k_u$ of edges linking nodes adjacent to $u$
-and the total possible number of edges among them, so
-\[
-  C(u) = \frac{2 k_u}{k_u(k_u - 1)},
+is the ratio between the number of edges linking nodes adjacent to $u$
+and the total possible number of edges among them, so if $u$ has $k_u =
+|N(u)|$ neighbors
+\begin{align*}
+  C(u) &= \frac{|\{\{v,w\} \in E : v,w \in N(u)\}|}{\frac{1}{2} k_u(k_u - 1)}, \\
   ~\text{ and }~
-  \langle C \rangle = \frac{1}{|V|} \sum_{v \in V} C(v)
-\]
+  \langle C \rangle &= \frac{1}{|V|} \sum_{v \in V} C(v)
+\end{align*}
 is the average clustering coefficient which is a measure for the tendency of
 the network to form groups or clusters. For clustering it also is possible to
 define a clustering distribution of the nodes $p(c)$.
@@ -2114,6 +2115,8 @@ linear, making it easier to find if there is a transitions $R_i \to R_j$ to
 the adjacent regions $R_j$.
 
 \subsection{Boolean Networks}
+
+\todo{Boolean networks}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
