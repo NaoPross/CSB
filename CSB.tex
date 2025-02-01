@@ -670,8 +670,10 @@ unknown, provided that the model is fully observable, the probabilities can be
 estimated using conditional counting
 \[
   p(\bar{X}_v \given \{X_w\}_{w \in \pa(v)}) \approx
-    \frac{N(X_v, \pa(v))}{\sum_{u \in V} N(X_u, \pa(u))},
+    \frac{N(X_v, \pa(v))}{\sum_{u \in \pa(v)} N(X_u, \pa(u))},
 \]
+
+\todo{Fix denominator above}
 
 \todo{explain $N$ and then MCMC}
 
@@ -711,6 +713,7 @@ where the marginal likelihood is taken from a prior $\theta$
           \EndIf
         \EndFor
       \Until{$\hat{G} = G$}
+      \State \Return $\hat{G}$
     \EndFunction
   \end{algorithmic}
 \end{alg}
@@ -754,8 +757,9 @@ be sources / sinks.
 
 To represent metabolic networks we use the stoichiometric matrix $N \in
 \mathbb{R}^{n \times q}$, wherein on the rows there are the internal
-metabolites and in the columns the reactions. An element $n_{ij}$ of $N$ is
-then the stoichiometric coefficient for the metabolite $i$ in reaction $j$. 
+metabolites and in the columns the reactions (incidence matrix). An element
+$n_{ij}$ of $N$ is then the stoichiometric coefficient for the metabolite $i$
+in reaction $j$. 
 
 \begin{example} Consider the following metabolic network. Nodes represent
   metabolites while arrows reactions. Reversible reactions have double headed
@@ -785,6 +789,7 @@ then the stoichiometric coefficient for the metabolite $i$ in reaction $j$.
       0 &  1 &  1 & -1 \\
     \end{bmatrix}.
   \]
+  Note that $R_3$ is considered only in one direction.
 \end{example}
 
 A flux distribution is a vector $r \in \mathbb{R}^q$ of reaction rates. We say
@@ -823,7 +828,16 @@ pathways.
 
 \todo{slides on limitations}
 
-\todo{conservation relations}
+\subsection{Conservation Relations}
+
+A conservation relation describes a subset of metabolites for which a weighted
+sum of their concentration is always constant in the network. In general,
+conservation relations can be found by looking at the left nullspace of the
+kernel matrix. That is, the weights of the conservation relations are $y \in
+\mathbb{R}^n : y^\T N = 0$.
+
+Conservation relations are especially useful to reduce the size of (ODE)
+models.
 
 \subsection{Flux Balance Analysis}
 
@@ -874,9 +888,21 @@ various solutions.
   Given the stoichiometric matrix $N$, the reactions $\{R_i\}_i$ and the
   bounds on the fluxes $\{\alpha_i\}_i, \{\beta_i\}_i$.
   \begin{algorithmic}
-    \Function{FVA}{$N$, $\{\alpha_i\}_i, \{\beta_i\}_i$}
-      \State Solve \eqref{eqn:fba} to find $r^\star$
-      \State \todo{what}
+    \Function{FVA}{$N$, $\{R_i\}_{i=1}^q$, $\{\alpha_i\}_i, \{\beta_i\}_i$}
+      \State $F \gets 0 \in \mathbb{R}^{q \times 2}$
+      \For{each  $R_i$}
+        \For {each direction $d \in \{1,2\}$ of $R_i$}
+          \State $w \gets 0 \in \mathbb{R}^{q}$
+          \State $w_i \gets (-1)^d$
+          \State Solve FBA problem
+            \begin{align*}
+              r^\star = \max_{r \in \mathbb{R}^q} ~ w^\T r ~ \st ~ N&r = 0 \\
+                \alpha_k \leq &r_k \leq \beta_k ~ \forall k
+            \end{align*}
+          \State $F_{i, d} \gets r^\star$
+        \EndFor
+      \EndFor
+      \State \Return $F$
     \EndFunction
   \end{algorithmic}
 \end{alg}
@@ -1032,13 +1058,13 @@ tools to analyze the system.
   }
   \renewcommand\arraystretch{1.2}
   \centering
-  \begin{tabular}{p{2cm} m{25mm} >{\(}l<{\)} >{\(}l<{\)} p{3cm}}
+  \begin{tabular}{p{2cm} m{25mm} >{\(}l<{\)} >{\(}l<{\)} } % p{3cm}}
     \toprule
     \bfseries Name
       & \bfseries Scheme
       & \textbf{Equation}
-      & \textbf{Solution}
-      & \bfseries Notes \\
+      & \textbf{Solution} \\
+      % & \bfseries Notes \\
     \midrule
     Constant Production 
       & \footnotesize \tikz{
@@ -1095,6 +1121,15 @@ tools to analyze the system.
           \node[right=8mm of A] (B) {B};
           \draw[semithick, -latex] (A) -- node[above] {$k$} (B);
         }
+      & \footnotesize 
+        \frac{d}{dt} \begin{bmatrix} \co{A} \\ \co{B} \end{bmatrix}
+          = k\co{A} \begin{bmatrix} -1 \\ 1 \end{bmatrix}
+      & \footnotesize
+        \begin{bmatrix} \co{A} \\ \co{B} \end{bmatrix}
+          = \begin{bmatrix}
+            \co{A}_0 e^{-kt} \\ 
+            \co{B}_0 + \co{A}_0 (1 - e^{-kt})
+          \end{bmatrix}
       \\
     Bimolecular conversion
       & \footnotesize \tikz{
@@ -1102,6 +1137,17 @@ tools to analyze the system.
           \node[right=8mm of AB.east] (C) {C};
           \draw[semithick, -latex] (AB) -- node[above] {$k$} (C);
         }
+      & \footnotesize
+        \begin{aligned}
+          \frac{d}{dt} \co{A} &= \frac{d}{dt} \co{B} = -k\co{A}\co{B} \\
+          \frac{d}{dt} \co{C} &= k \co{A} \co{B}
+        \end{aligned}
+        % \frac{d}{dt} \begin{bmatrix}
+        %   \co{A} \\ \co{B} \\ \co{C}
+        % \end{bmatrix}
+        % = k\co{A}\co{B} \begin{bmatrix}
+        %     -1 \\ -1 \\ 1
+        % \end{bmatrix}
       \\
     \bottomrule
   \end{tabular}
