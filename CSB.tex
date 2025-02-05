@@ -249,8 +249,14 @@ or the Manhattan (aka City-block, Taxicab, $L^1$) metric
 
 There are many clustering algorithms, and they are all usually under the
 broader category of \emph{unsupervised classification} in machine learning.
+They can be classified into two main categories:
 
-\todo{hierarchical algo, vs partitioning}
+\begin{itemize}
+  \item hierarchical algorithms: either bottom-up (start from singletons and successively merge)
+        or top-down (start from a single cluster and split it based on distance)
+  \item non-hierarchical algorithms: either self-organizing maps (neural networks)
+        or k-means clustering (start from a random assignment and progressively refine the clusters)
+\end{itemize}
 
 \begin{alg}[$k$-means Clustering]
   Given a data set $\{M_j\}_j$, a (guess of the) number of clusters $k$, and a
@@ -462,9 +468,13 @@ define a clustering distribution of the nodes $p(c)$.
   characterizations and through the degree distribution it has been found that
   many organism have a scale-free metabolic network, which implies the
   existence of hubs (Water, ADP, Orthophosphate, ATP, NADP\textsuperscript{+},
-  Pyrophosphate, NAD\textsuperscript{+}, NADPH, \ldots). Similarly using path
-  lengths it can be inferred that most metabolic pathways are short.
-  \todo{what is network diameter.}
+  Pyrophosphate, NAD\textsuperscript{+}, NADPH, \ldots). Similarly, using path
+  lengths it can be inferred that most metabolic pathways are short (small-world
+  networks). If the average shortest path length (network diameter) is taken as a
+  measure of the functionality of the network, it is possible to track how this
+  quantity changes after removing nodes from the network. If the nodes are chosen
+  at random the network proves to be tolerant, while if specific nodes are removed
+  (hubs) the network is highly sensitive and looses functionality quickly.
 \end{example}
 
 \subsection{Caveats / Challenges}
@@ -475,7 +485,15 @@ define a clustering distribution of the nodes $p(c)$.
     a generalization called hypergraphs. Though for some simple reactions it
     is possible to decouple the substrates and / or products in the reaction.
 
-  \item \todo{small world characteristics}
+  \item As presented in the example above, biological networks usually have 
+  small world characteristics, meaning that they have high clustering coefficient
+  and short diameter. This characteristic is due to the presence of unrealistic
+  \"shortcuts\" which are possible because of the simple network models that
+  are being used. These networks do not take into account the chemical constraints
+  of metabolic reactions (i.e. a specific and complete set of reactants is needed
+  for a metabolic reaction and the cofactors (e.g. NADPH) common between reactions
+  do not represent actual paths between them). More complex models can be implemented
+  to correct this.
 
   \item In some cases such as metabolism the power law (scale-free network
     properties) emerge from a combination of many underlying distribution. So
