@@ -932,11 +932,11 @@ various solutions.
 \subsection{Metabolic Pathway Analysis}
 
 This is a different method to analyze a metabolic network which in contrast to
-FBA considers all possible flux solutions using a special subset of paths
-called extreme pathways. The constraints from stoichiometry define a
-polyhedral cone called \emph{flux cone} when all reactions are irreversible,
-and if some are not irreversible we can set the corresponding $a_i = 0$ to
-define
+FBA considers all possible flux solutions using special subsets of paths
+called extreme pathways and elementary flux modes. The constraints from
+stoichiometry define a polyhedral cone called \emph{flux cone} when all
+reactions are irreversible, and if some are not irreversible we can set the
+corresponding $a_i = 0$ to define
 \begin{align*}
   P(N) &= \{
     r \in \mathbb{R}^q : Nr = 0, r_i \geq 0  ~ \forall i \in \textbf{IRR}
@@ -959,8 +959,10 @@ The flux cone $P(N)$ can be described in terms of its elementary flux modes
     where $R(e) = \{R_i : e_i \neq 0\}$ is the set of reactions involved in
     $e$.
 \end{enumerate}
-So, any flux distribution can be written in term of the EFMs as
-$r = \sum_i \alpha_i e^i$ for some coefficients $\alpha_i \geq 0$.
+So, any flux distribution can be written in term of the EFMs as $r = \sum_i
+\alpha_i e^i$ for some coefficients $\alpha_i \geq 0$. Note that EFMs are not
+the same as extreme pathways (EPs). As described earlier EFMs are the extreme
+rays of $P(N)$, while EPs are the basis vector in which $P(N)$ resides.
 
 \begin{example} Consider again the following simple network.
   \begin{center}
